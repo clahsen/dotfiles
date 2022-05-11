@@ -88,6 +88,8 @@ plugins=(
     vi-mode
     vundle
     python
+    zsh-syntax-highlighting
+    zsh-autosuggestions
 )
 
 DEFAULT_USER="ma034"
