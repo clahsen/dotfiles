@@ -124,6 +124,7 @@ alias zshconfig="vim ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 alias cdg='cd ~/Desktop/git_repos'
+alias cdd='cd ~/Downloads/dotfiles'
 alias ll='ls -la'
 neofetch
 
