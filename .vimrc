@@ -137,3 +137,8 @@ let g:ale_fixers = {
 \   ]
 \}
 nmap <F8> <Plug>(ale_fix)
+nmap <F6> :NERDTreeToggle<CR>
+let NERDTreeShowHidden=1
+let NERDTreeQuitOnOpen=1
+
+
