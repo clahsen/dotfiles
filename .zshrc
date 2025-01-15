@@ -126,7 +126,14 @@ alias zshconfig="vim ~/.zshrc"
 alias cdg='cd ~/Desktop/git_repos'
 alias cdd='cd ~/Downloads/dotfiles'
 alias ll='ls -la'
-neofetch
+
+if [ -x neofetch ]; then
+    neofetch
+fi
+
+if [ -f ~/.zsh_aliases ]; then
+    . ~/.zsh_aliases
+fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
