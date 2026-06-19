@@ -94,6 +94,7 @@ Plugin 'preservim/nerdtree'
 Plugin 'dense-analysis/ale'
 Plugin 'arcticicestudio/nord-vim'
 Plugin 'mhinz/vim-signify'
+Plugin 'junegunn/fzf'
 
 " add all your plugins here (note older versions of Vundle
 " used Bundle instead of Plugin)
@@ -128,6 +129,7 @@ nmap <C-n> <Plug>(ale_next_wrap_error)
 nmap <C-p> <Plug>(ale_next_wrap_warning)
 
 let g:ale_python_black_options = '-l 79'
+let g:ale_python_auto_uv = 'uv'
 let g:ale_fixers = {
 \       'python' : [
 \       'remove_trailing_lines',
