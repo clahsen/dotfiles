@@ -128,16 +128,28 @@ let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 nmap <C-n> <Plug>(ale_next_wrap_error)
 nmap <C-p> <Plug>(ale_next_wrap_warning)
 
+" ---- Python: lint & format with ruff (run via uv when available) ----
+" When a uv project is detected, ALE runs tools through `uv run` so the
+" project-pinned ruff is used instead of a global one.
+let g:ale_python_auto_uv = 1
+
+" Choose Python linters/fixers from what's installed, so this vimrc also
+" works on remote machines without ruff/uv. ALE additionally skips any
+" linter/fixer whose executable is missing, so a missing tool is harmless.
+let s:py_fixers = ['remove_trailing_lines', 'trim_whitespace']
+if executable('ruff') || executable('uv')
+  let g:ale_linters = {'python': ['ruff']}
+  " 'ruff'        -> ruff check --fix (incl. import sorting via the I rules)
+  " 'ruff_format' -> ruff format
+  let s:py_fixers += ['ruff', 'ruff_format']
+elseif executable('black') || executable('isort')
+  let g:ale_linters = {'python': ['flake8']}
+  let s:py_fixers += ['isort', 'black']
+endif
+let g:ale_fixers = {'python': s:py_fixers}
+
+" Only used by the black fallback above (line length 79).
 let g:ale_python_black_options = '-l 79'
-let g:ale_python_auto_uv = 'uv'
-let g:ale_fixers = {
-\       'python' : [
-\       'remove_trailing_lines',
-\       'trim_whitespace',
-\       'isort',
-\       'black',
-\   ]
-\}
 nmap <F8> <Plug>(ale_fix)
 nmap <F6> :NERDTreeToggle<CR>
 let NERDTreeShowHidden=1
