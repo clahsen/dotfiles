@@ -1,3 +1,6 @@
+" Implied when a vimrc is found, but be explicit (and keep it first).
+set nocompatible
+
 set tabstop=4
 set shiftwidth=4
 set expandtab
@@ -16,7 +19,7 @@ set ruler
 set cursorline
 syntax on
 set history=700
-set encoding=utf8
+set encoding=utf-8
 set fileformat=unix
 set ambiwidth=single
 set scrolloff=12
@@ -24,7 +27,11 @@ set scrolloff=12
 inoremap jk <ESC>
 " colorscheme solarized
 " set background=dark
-set pastetoggle=<f5>
+" pastetoggle was removed in Vim 9; modern Vim/Neovim auto-handle bracketed
+" paste. Guarded so it doesn't error on newer versions.
+if exists('+pastetoggle')
+  set pastetoggle=<f5>
+endif
 
 " set where to open splits
 set splitbelow
@@ -50,62 +57,44 @@ nnoremap <space> za
 " color bad whitespaces in python
 " au BufRead,BufNewFile *.py,*.pyw,*.c,*.h match BadWhitespace /\s\+$/
 
-" Vundle section
+" ---- Plugins (vim-plug) ----
 
-" Setup Vundle and Plugins if Vundle is not installed
-let iCanHazVundle=1
-let vundle_readme=expand('~/.vim/bundle/Vundle.vim/README.md')
-if !filereadable(vundle_readme)
-  echo "Installing Vundle.."
-  echo ""
-  silent !mkdir -p ~/.vim/bundle
-  silent !git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-  let iCanHazVundle=0
-endif
-set rtp+=~/.vim/bundle/Vundle.vim/
-call vundle#rc()
-
-" let Vundle manage Vundle, required
-Plugin 'VundleVim/Vundle.vim'
-if iCanHazVundle == 0
-  echo "Installing Bundles, please ignore key map error messages"
-  echo ""
-  :source ~/.vimrc
-  :PluginInstall
+" Auto-install vim-plug itself on a fresh machine.
+let s:plug_path = expand('~/.vim/autoload/plug.vim')
+if !filereadable(s:plug_path)
+  echo "Installing vim-plug.."
+  silent execute '!curl -fLo ' . s:plug_path . ' --create-dirs '
+    \ . 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  " Install plugins on first start, then re-source so config applies.
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
-" END - Setting up Vundle - the vim plugin bundler
-set nocompatible                    " required by vundle
-filetype off                        " required by vundle
+filetype off
 
-" set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+call plug#begin('~/.vim/plugged')
 
-" alternatively, pass a path where Vundle should install plugins
-"call vundle#begin('~/some/path/here')
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'tpope/vim-fugitive'
+" Lazy: load only when toggled (mapped to <F6> below).
+Plug 'preservim/nerdtree', { 'on': 'NERDTreeToggle' }
+" Lazy: load only for filetypes we actually lint.
+Plug 'dense-analysis/ale', { 'for': ['python', 'yaml'] }
+Plug 'arcticicestudio/nord-vim'
+Plug 'mhinz/vim-signify'
+" fzf binary + Vim commands (:Files, :Rg, ...). 'do' builds/updates the binary.
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 
-" let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
-Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
-Plugin 'tpope/vim-fugitive'
-Plugin 'preservim/nerdtree'
-Plugin 'dense-analysis/ale'
-Plugin 'arcticicestudio/nord-vim'
-Plugin 'mhinz/vim-signify'
-Plugin 'junegunn/fzf'
+" plug#end() also runs `filetype plugin indent on` and `syntax enable`.
+call plug#end()
 
-" add all your plugins here (note older versions of Vundle
-" used Bundle instead of Plugin)
-
-" ...
-
-" All of your Plugins must be added before the following line
-call vundle#end()            " required
-filetype plugin indent on    " required
-
-colorscheme nord
+" Enable 24-bit color where supported; nord looks much better with it.
+if has('termguicolors')
+  set termguicolors
+endif
+" silent! so a fresh machine without the plugin yet doesn't error on startup.
+silent! colorscheme nord
 
 " ---- vim-airline ----"
 "  require powerline-symbol patched font intstalled
@@ -119,7 +108,9 @@ let g:airline#extensions#tabline#enabled = 0
 let g:airline#extensions#tabline#left_sep = ' '
 let g:airline#extensions#tabline#formatter = 'unique_tail'
 
-au BufNewFile,BufRead *.yaml,*.yml so ~/.vim/yaml.vim
+if filereadable(expand('~/.vim/yaml.vim'))
+  au BufNewFile,BufRead *.yaml,*.yml so ~/.vim/yaml.vim
+endif
 
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
