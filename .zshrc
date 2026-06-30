@@ -155,3 +155,9 @@ if [[ -d $HOME/anaconda3 ]]; then
     # <<< conda initialize <<<
 fi
 
+export GOPATH=${HOME}/go
+export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin
+export EDITOR=vim
+
+export PATH="$PATH:~/.local/bin"
+eval "$(uvx --generate-shell-completion zsh)"
