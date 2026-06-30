@@ -24,6 +24,20 @@ set fileformat=unix
 set ambiwidth=single
 set scrolloff=12
 
+" Keep the sign gutter always open so text doesn't jump when ALE/signify
+" add or remove signs.
+set signcolumn=yes
+
+" Persistent undo: keep undo history across sessions (created if missing).
+if has('persistent_undo')
+  let s:undodir = expand('~/.vim/undo')
+  if !isdirectory(s:undodir)
+    call mkdir(s:undodir, 'p', 0700)
+  endif
+  let &undodir = s:undodir
+  set undofile
+endif
+
 inoremap jk <ESC>
 " colorscheme solarized
 " set background=dark
@@ -108,6 +122,18 @@ let g:airline#extensions#tabline#enabled = 0
 let g:airline#extensions#tabline#left_sep = ' '
 let g:airline#extensions#tabline#formatter = 'unique_tail'
 
+" ---- fzf (fuzzy finder) ----
+" <leader> is '\' by default. Guarded with exists() so they silently no-op
+" on a machine where fzf.vim isn't installed yet (e.g. before :PlugInstall).
+if exists(':Files')
+  nnoremap <leader>f :Files<CR>
+  nnoremap <leader>b :Buffers<CR>
+  " :Rg needs the ripgrep binary.
+  if executable('rg')
+    nnoremap <leader>g :Rg<CR>
+  endif
+endif
+
 if filereadable(expand('~/.vim/yaml.vim'))
   au BufNewFile,BufRead *.yaml,*.yml so ~/.vim/yaml.vim
 endif
@@ -119,25 +145,59 @@ let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
 nmap <C-n> <Plug>(ale_next_wrap_error)
 nmap <C-p> <Plug>(ale_next_wrap_warning)
 
-" ---- Python: lint & format with ruff (run via uv when available) ----
-" When a uv project is detected, ALE runs tools through `uv run` so the
-" project-pinned ruff is used instead of a global one.
-let g:ale_python_auto_uv = 1
+" ---- Python: lint & format with ruff (run from the project venv) ----
+" Run Python tools from the project's virtualenv (.venv) and export
+" VIRTUAL_ENV to their processes. This makes ruff use the project-pinned
+" version AND lets jedi-language-server introspect installed third-party
+" packages (numpy, matplotlib, ...) for completion/hover.
+"
+" Preferred over `ale_python_auto_uv` here: with auto_uv, ALE launches the
+" LSP as `uv run jedi-language-server`, which re-syncs on every start and
+" fails outright if the server isn't a project dependency. auto_virtualenv
+" instead runs .venv/bin/<tool> directly, falling back to the global tool
+" (with VIRTUAL_ENV still set) when the venv lacks it.
+let g:ale_python_auto_virtualenv = 1
+
+" LSP-powered completion through ALE (must be set before ALE is loaded).
+let g:ale_completion_enabled = 1
+" Nicer popup: show menu even for one match, don't auto-insert.
+set completeopt=menu,menuone,noselect
+
+" <Tab>/<S-Tab> navigate the completion popup when it's visible; otherwise
+" <Tab> inserts a literal tab as usual.
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
 
 " Choose Python linters/fixers from what's installed, so this vimrc also
 " works on remote machines without ruff/uv. ALE additionally skips any
 " linter/fixer whose executable is missing, so a missing tool is harmless.
+let s:py_linters = []
 let s:py_fixers = ['remove_trailing_lines', 'trim_whitespace']
 if executable('ruff') || executable('uv')
-  let g:ale_linters = {'python': ['ruff']}
+  let s:py_linters += ['ruff']
   " 'ruff'        -> ruff check --fix (incl. import sorting via the I rules)
   " 'ruff_format' -> ruff format
   let s:py_fixers += ['ruff', 'ruff_format']
 elseif executable('black') || executable('isort')
-  let g:ale_linters = {'python': ['flake8']}
+  let s:py_linters += ['flake8']
   let s:py_fixers += ['isort', 'black']
 endif
+" jedi-language-server adds completion, goto-definition and hover WITHOUT
+" emitting diagnostics, so it doesn't duplicate ruff. Install once with:
+"   uv tool install jedi-language-server
+if executable('jedi-language-server')
+  let s:py_linters += ['jedils']
+endif
+let g:ale_linters = {'python': s:py_linters}
 let g:ale_fixers = {'python': s:py_fixers}
+" Auto-run the fixers above on :w, so files stay matching `ruff format` in CI.
+let g:ale_fix_on_save = 1
+
+" LSP navigation (these are no-ops in buffers where ALE isn't loaded).
+nnoremap <silent> gd :ALEGoToDefinition<CR>
+nnoremap <silent> gr :ALEFindReferences<CR>
+" Note: this overrides the default K (keyword/:help lookup) with LSP hover.
+nnoremap <silent> K  :ALEHover<CR>
 
 " Only used by the black fallback above (line length 79).
 let g:ale_python_black_options = '-l 79'

@@ -2,3 +2,4 @@
 .vim/bundle/
 .vim/autoload/
 .vim/plugged/
+.vim/undo/
